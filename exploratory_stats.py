@@ -51,3 +51,33 @@ for col_idx, (var, label) in enumerate(var_labels.items()):
         ax.tick_params()
 plt.tight_layout()
 plt.savefig(f"{OUTPUT_DIR}/1_distributions.png")
+plt.close()
+
+
+# ______________________
+# Relations between variables
+# ______________________
+
+pairs = [("sb", "sd"), ("sb", "ad"), ("sd", "ad")]
+pair_labels = {
+    ("sb","sd"): ("Size at birth", "Size at division"),
+    ("sb","ad"): ("Size at birth", "Age at division"),
+    ("sd","ad"): ("Size at division", "Age at division"),
+}
+
+fig, axes = plt.subplots(2,3, figsize=(13,7))
+fig.suptitle("Relations between variables")
+
+for col_idx, (vx, vy) in enumerate(pairs):
+    for row_idx, (name, data) in enumerate([("Population", pop), ("Lineage", lin)]):
+        ax = axes[row_idx, col_idx]
+        x, y = data[vx], data[vy]
+        common = data[[vx, vy]]
+        ax.scatter(common[vx], common[vy], alpha=0.5, s=5, color=colors[name])
+        ax.set_xlabel(pair_labels[(vx,vy)][0])
+        ax.set_ylabel(pair_labels[(vx, vy)][1])
+        ax.set_title(f"{name}")
+        ax.legend()
+        ax.tick_params()
+plt.tight_layout()
+plt.savefig(f"{OUTPUT_DIR}/2_relations.png")
