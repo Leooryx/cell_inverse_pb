@@ -81,3 +81,53 @@ for col_idx, (vx, vy) in enumerate(pairs):
         ax.tick_params()
 plt.tight_layout()
 plt.savefig(f"{OUTPUT_DIR}/2_relations.png")
+plt.close()
+
+
+# _____________________
+# Estimation of the size growth rate
+
+# sd = sb*exp(\lambda*ad) --> len(sd/sb) = \lambda * ad 
+# _____________________
+
+lambdas = {}
+
+fig, axes = plt.subplots(1, 2, figsize=(11, 5))
+fig.suptitle("Estimation of $\lambda$ (size growth rate) by regression\n" "$\ln(s_d/s_d) = \lambda a_d$") #can separate two terminated str sequences with a simple space
+
+for ax, (name, data) in zip(axes, [("Lineage", lin), ("Population", pop)]):
+    
+    Y = np.log(data["sd"]/data["sb"])
+    X = data["ad"].values
+    
+    # computations without intercept
+    lam = np.dot(X, Y)/np.dot(X, X)
+    Y_pred = lam * X
+    ss_res = np.sum((Y - Y_pred)**2)
+    ss_tot = np.sum((Y - Y.mean())**2)
+    r2 = 1 - ss_res / ss_tot
+
+    # computations with intercept, using the stats package
+    lambda_intercept, intercept, r_intercept, *_ = stats.linregress(X,Y)
+
+    lambdas[name] = lam
+    print(name)
+    print(f"$\lambda$ (sans intercept) = {lam:.3f}, R^2 = {r2:.3f}")
+    print(f"$\lambda$ (avec intercept) = {lambda_intercept:.3f}, intercept = {intercept:.3f}, R^2 = {r_intercept:.3f}")
+    
+    ax.scatter(X, Y, alpha=0.3, s=5, color=colors[name], label="data")
+    xfit = np.linspace(0, X.max(), 200)
+    ax.plot(xfit, lam * xfit, label=f"$\lambda$ (sans intercept) = {lam:.3f} (R^2 = {r2:.3f})")
+    ax.plot(xfit, lambda_intercept * xfit, color="gray", linestyle='--', label=f"$\lambda$ (avec intercept) = {lambda_intercept:.3f} (R^2 = {r_intercept:.3f})")
+    ax.set_xlabel("Age at division ($a_d$)")
+    ax.set_ylabel("$\ln(s_d / s_b)$")
+    ax.set_title(name)
+    ax.legend()
+    ax.tick_params()
+plt.tight_layout()
+plt.savefig(f"{OUTPUT_DIR}/3_regression.png")
+plt.close()
+
+
+
+
