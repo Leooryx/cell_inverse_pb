@@ -2,41 +2,49 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+def gaussian_kernel(z, alpha):
+    return (1.0 / (np.sqrt(2 * np.pi) * alpha)) * np.exp(-0.5 * (z / alpha)**2)
 
-
-def kernel_estimation_fast(a_grid, observations, alpha):
-    
+def kernel_estimation(observations, alpha):
     obs = np.asarray(observations)
-    diff = a_grid[:, np.newaxis] - obs[np.newaxis, :]
+    a_grid = np.linspace(np.min(obs), np.max(obs), len(obs))
     
-    kernels = (1.0 / (np.sqrt(2 * np.pi) * alpha)) * np.exp(-0.5 * (diff / alpha)**2)
-    numerator = np.sum(kernels, axis=1)
-    denominator = np.sum(obs[np.newaxis, :] >= a_grid[:, np.newaxis], axis=1)
+    B_hat = []
+    denom_list = []
     
-    # naive approach to tackle division by 0
-    return np.divide(numerator, denominator, out=np.zeros_like(numerator), where=denominator > 0)
+    for a in a_grid:
+        numerator = np.sum(gaussian_kernel(a - obs, alpha))
+        denominator = np.sum(obs >= a)
+        
+        B_hat.append(numerator)
+        denom_list.append(denominator)
+    
+    B_hat = np.array(B_hat)
+    denom = np.array(denom_list)
+    
+    # handling division by zero by setting a mask to compute survival function only when there are more than k individuals
+    k = 1
+    valid = denom > k
+    
+    result = np.full_like(B_hat, np.nan)
+    result[valid] = B_hat[valid] / denom[valid]
+    
+    return result
 
-def find_best_alpha(a_grid, observations, B_true_func, alphas):
+def find_best_alpha(observations, B, alphas):
     obs = np.asarray(observations)
+    a_grid = np.linspace(min(obs), max(obs), len(obs))
     best_alpha = None
     min_mse = float('inf')
     mse_history = []
     
-    b_true = B_true_func(a_grid)
-    
-    # Pre-calculate mask for data scarcity (at least 10 cells at risk)
-    # This prevents the MSE from being ruined by the noisy "tail"
-    risk_counts = np.sum(obs[np.newaxis, :] >= a_grid[:, np.newaxis], axis=1)
-    mask = risk_counts > 10
-    
-    if not np.any(mask):
-        return None, np.nan, []
+    B_true = B(a_grid)
 
     for alpha in alphas:
-        b_hat = kernel_estimation_fast(a_grid, obs, alpha)
-        
+        B_hat = kernel_estimation(obs, alpha)
+        valid = ~np.isnan(B_hat)
         # Calculate MSE only where data is sufficient
-        mse = np.mean((b_hat[mask] - b_true[mask])**2)
+        mse = np.mean((B_hat[valid] - B_true[valid])**2)
         mse_history.append(mse)
         
         if mse < min_mse:
@@ -50,41 +58,38 @@ def find_best_alpha(a_grid, observations, B_true_func, alphas):
 # test
 
 PATH_SYNTH_AGE_LIN = "data/lin_synthetic_ages.txt"
-# Assuming the file is space-separated based on your previous print output
-synth_lin_age = pd.read_csv(PATH_SYNTH_AGE_LIN, sep=r'\s+', header=None, names=["ad"])
+synth_lin_age = pd.read_csv(PATH_SYNTH_AGE_LIN, header=None, names=["ad"])
 synth_real_ages = synth_lin_age["ad"]
+print(synth_real_ages)
 
 def B_power(a):
     return a**1.1 
 
 
-age_points = np.linspace(0, 4, 100)
+age_points = np.linspace(min(synth_real_ages), max(synth_real_ages), len(synth_real_ages))
 alphas = np.linspace(0.05, 0.5, 50) 
 
-best_a, min_m, history = find_best_alpha(age_points, synth_real_ages, B_power, alphas)
+best_a, min_m, history = find_best_alpha(synth_real_ages, B_power, alphas)
 
-if best_a is not None:
-    print(f"Best Alpha found: {best_a:.4f}")
-    print(f"Minimum MSE: {min_m:.6f}")
+print(f"Best Alpha found: {best_a:.4f}")
+print(f"Minimum MSE: {min_m:.6f}")
 
-    # Final Estimation
-    B_estimated = kernel_estimation_fast(age_points, synth_real_ages, best_a)
-    B_synthetic = B_power(age_points)
+B_estimated = kernel_estimation(synth_real_ages, best_a)
+B_synthetic = B_power(age_points)
 
-    # Plotting
-    plt.figure(figsize=(10, 6))
-    plt.plot(age_points, B_synthetic, color='black', lw=2, label='Synthetic $B(a) = a^{1.1}$')
-    plt.plot(age_points, B_estimated, color='blue', linestyle='--', lw=2, label=f'Estimated $\hat{{B}}$ ($\\alpha$={best_a:.2f})')
-    
-    plt.title('Division Rate Estimation: Synthetic vs. Kernel Estimator')
-    plt.xlabel("Age at division")
-    plt.ylabel("Division rate $B(a)$")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    
-    output_path = "outputs/synthetic_vs_estimated.png"
-    plt.savefig(output_path)
-    print(f"Plot saved to {output_path}")
-    plt.show()
-else:
-    print("Optimization failed: Not enough data points 'at risk'.")
+
+# Plotting
+plt.figure(figsize=(10, 6))
+plt.plot(age_points, B_synthetic, color='black', lw=2, label='Synthetic B')
+plt.plot(age_points, B_estimated, color='blue', linestyle='--', lw=2, label=f'Estimated B, alpha={best_a:.2f}')
+
+plt.title('Division Rate Estimation: Synthetic vs. Kernel Estimator')
+plt.xlabel("Age at division")
+plt.ylabel("Division rate $B(a)$")
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+output_path = "outputs/synthetic_vs_estimated.png"
+plt.savefig(output_path)
+print(f"Plot saved to {output_path}")
+plt.show()
