@@ -30,7 +30,7 @@ def simulate_lineage(B, n_samples, a_max=45.0):
 
 # Synthetic data generated with 
 def B_power(a):
-    return a**2 
+    return a**1.1 
 
 N=2000
 synthetic_ages = simulate_lineage(B_power, N, a_max=45)
