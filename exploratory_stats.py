@@ -7,8 +7,8 @@ import os
 
 OUTPUT_DIR = "outputs"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-PATH_POP = "pop_Eric0822_MDJ_sb_sd_ad.txt"
-PATH_LIN = "lin_Lydia2901_new_MDJ_ad_sb_sd.txt"
+PATH_POP = "data/pop_Eric0822_MDJ_sb_sd_ad.txt"
+PATH_LIN = "data/lin_Lydia2901_new_MDJ_ad_sb_sd.txt"
 
 pop = pd.read_csv(PATH_POP, header=None, names=["sb", "sd", "ad"])
 lin = pd.read_csv(PATH_LIN, header=None, names=["ad", "sb", "sd"])
