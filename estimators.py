@@ -43,7 +43,6 @@ def find_best_alpha(observations, B, alphas):
     for alpha in alphas:
         B_hat = kernel_estimation(obs, alpha)
         valid = ~np.isnan(B_hat)
-        # Calculate MSE only where data is sufficient
         mse = np.mean((B_hat[valid] - B_true[valid])**2)
         mse_history.append(mse)
         
@@ -60,10 +59,9 @@ def find_best_alpha(observations, B, alphas):
 PATH_SYNTH_AGE_LIN = "data/lin_synthetic_ages.txt"
 synth_lin_age = pd.read_csv(PATH_SYNTH_AGE_LIN, header=None, names=["ad"])
 synth_real_ages = synth_lin_age["ad"]
-print(synth_real_ages)
 
 def B_power(a):
-    return a**1.1 
+    return a**3
 
 
 age_points = np.linspace(min(synth_real_ages), max(synth_real_ages), len(synth_real_ages))
@@ -79,17 +77,29 @@ B_synthetic = B_power(age_points)
 
 
 # Plotting
-plt.figure(figsize=(10, 6))
-plt.plot(age_points, B_synthetic, color='black', lw=2, label='Synthetic B')
-plt.plot(age_points, B_estimated, color='blue', linestyle='--', lw=2, label=f'Estimated B, alpha={best_a:.2f}')
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-plt.title('Division Rate Estimation: Synthetic vs. Kernel Estimator')
-plt.xlabel("Age at division")
-plt.ylabel("Division rate $B(a)$")
-plt.legend()
-plt.grid(True, alpha=0.3)
+# --- Left: MSE history ---
+axes[0].plot(alphas, history, lw=2)
+axes[0].axvline(best_a, linestyle='--', label=f'Best alpha = {best_a:.3f}')
+axes[0].set_title("MSE vs Alpha")
+axes[0].set_xlabel("Alpha")
+axes[0].set_ylabel("MSE")
+axes[0].grid(True, alpha=0.3)
+axes[0].legend()
+
+# --- Right: B vs B_hat ---
+axes[1].plot(age_points, B_synthetic, color='black', lw=2, label='Synthetic B')
+axes[1].plot(age_points, B_estimated, color='blue', linestyle='--', lw=2,
+             label=f'Estimated B, alpha={best_a:.2f}')
+axes[1].set_title('Division Rate Estimation')
+axes[1].set_xlabel("Age at division")
+axes[1].set_ylabel("Division rate B(a)")
+axes[1].grid(True, alpha=0.3)
+axes[1].legend()
+
+# Layout
+plt.tight_layout()
 
 output_path = "outputs/synthetic_vs_estimated.png"
 plt.savefig(output_path)
-print(f"Plot saved to {output_path}")
-plt.show()

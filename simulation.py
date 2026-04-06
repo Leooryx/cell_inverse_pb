@@ -15,7 +15,7 @@ def simulate_lineage(B, n_samples, a_max=45.0):
     x_test = np.linspace(0.01, a_max, 200)
     def f_density(a):
         steps = np.arange(0, a, 0.01)
-        return B(a) * np.exp(-np.sum(B(steps)) * 0.01)
+        return B(a, power) * np.exp(-np.sum(B(steps, power)) * 0.01)
     
     M = max([f_density(val) for val in x_test]) * 1.1
 
@@ -29,9 +29,10 @@ def simulate_lineage(B, n_samples, a_max=45.0):
     return np.array(samples)
 
 # Synthetic data generated with 
-def B_power(a):
-    return a**1.1 
+def B_power(a, power):
+    return a**power 
 
+power=3
 N=2000
 synthetic_ages = simulate_lineage(B_power, N, a_max=45)
 np.savetxt("data/lin_synthetic_ages.txt", synthetic_ages)
@@ -51,7 +52,7 @@ ax1.set_ylabel("Density")
 
 # synthetic data
 ax2.hist(synthetic_ages, bins=40, density=True)
-ax2.set_title("Synthetic ages distribution for $B(a)=a**2$")
+ax2.set_title(f"Synthetic ages distribution for B(a)=a**{power}")
 ax2.set_xlabel("Age at division")
 
 plt.tight_layout()
