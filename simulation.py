@@ -1,1 +1,1 @@
-#file to simulate data and compare the difference with real data
+#file to simulate data and compare the difference with real data using Monte-Carlo
