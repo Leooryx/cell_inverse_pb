@@ -55,13 +55,21 @@ def find_best_alpha(observations, B, alphas):
 
 
 # test
+PATH_LIN = "data/lin_Lydia2901_new_MDJ_ad_sb_sd.txt"
+lin = pd.read_csv(PATH_LIN, header=None, names=["ad", "sb", "sd"])
+real_A = lin["ad"]
+real_Xb = lin["sb"]
+real_Xd = lin["sd"]
+a_max = np.max(real_A)
+print(a_max)
 
-PATH_SYNTH_AGE_LIN = "data/lin_synthetic_ages.txt"
-synth_lin_age = pd.read_csv(PATH_SYNTH_AGE_LIN, header=None, names=["ad"])
+PATH_SYNTH_AGE_LIN = "data/synthetic_lin_age_model.txt"
+synth_lin_age = pd.read_csv(PATH_SYNTH_AGE_LIN, header=None, names=["ad", "sb", "sd"])
 synth_real_ages = synth_lin_age["ad"]
+print(synth_real_ages)
 
 def B_power(a):
-    return a**3
+    return a**2
 
 
 age_points = np.linspace(min(synth_real_ages), max(synth_real_ages), len(synth_real_ages))
