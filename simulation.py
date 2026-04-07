@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 
-# We use the rejection algorithm
+np.random.seed(42)
 
 
 # 1. Age-dependent division rate
@@ -39,12 +39,12 @@ def simulate_lineage(B, num_samples, growth_rate, a_max, Xbar):
     for _ in tqdm(range(num_samples)):
         a_div = sample_division_age(B, a_max, B_max)
         x_div = X_current*np.exp(growth_rate*a_div)
-        A.append(a_div)
-        Xb.append(X_current)
-        Xd.append(x_div)
+        A.append(np.round(a_div,3))
+        Xb.append(np.round(X_current, 3))
+        Xd.append(np.round(x_div, 3))
         X_current = x_div / 2
     
-    return [np.array(A), np.array(Xb), np.array(Xd)].T
+    return np.column_stack((A, Xb, Xd))
 
 
 
@@ -54,30 +54,63 @@ def B_power(a, power=2):
 N=2000
 power=2
 
-
 PATH_LIN = "data/lin_Lydia2901_new_MDJ_ad_sb_sd.txt"
 lin = pd.read_csv(PATH_LIN, header=None, names=["ad", "sb", "sd"])
-real_ages = lin["ad"]
+real_A = lin["ad"]
+real_Xb = lin["sb"]
 real_Xd = lin["sd"]
-a_max = np.max(real_ages)
-Xbar = np.mean(real_Xd)
-growth_rate = 0.78 #inspired from linear regression
+a_max = np.max(real_A)
+Xbar = np.mean(real_Xb)
+print("real a_max:", a_max, "/ real X_bar:", Xbar)
+
+growth_rate = 0.53325 #found manually for B_power (power=2), to avoid explosion or zero sizes
+
 synthetic_data = simulate_lineage(B_power, N, growth_rate, a_max, Xbar)
+print(synthetic_data.shape)
 np.savetxt("data/lin_synthetic_ages.txt", synthetic_data)
-synthetic_ages = synthetic_data[0]
+synthetic_A = synthetic_data[:,0]
+synthetic_Xb = synthetic_data[:,1]
+synthetic_Xd = synthetic_data[:,2]
+synthetic_A_max = np.round(np.max(synthetic_A),3)
+synthetic_Xbar = np.round(np.mean(synthetic_Xb), 3)
+print("fake a_max:", synthetic_A_max, "/ fake Xbar:", synthetic_Xbar)
 
 #Visualization
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+fig, axes = plt.subplots(3, 2, figsize=(12, 6))
 #real data
-ax1.hist(real_ages, bins=40, density=True)
-ax1.set_title("Real ages distribution")
-ax1.set_xlabel("Age at division")
-ax1.set_ylabel("Density")
+axes[0,0].hist(real_A, bins=40, density=True)
+axes[0,0].set_title("Real ages distribution")
+axes[0,0].set_xlabel("Age at division")
+axes[0,0].set_ylabel("Density")
+axes[0,0].grid()
+
+axes[1,0].hist(real_Xb, bins=40, density=True)
+axes[1,0].set_title("Real sizes at birth distribution")
+axes[1,0].set_xlabel("Size at birth")
+axes[1,0].set_ylabel("Density")
+axes[1,0].grid()
+
+axes[2,0].hist(real_Xd, bins=40, density=True)
+axes[2,0].set_title("Real sizes at division distribution")
+axes[2,0].set_xlabel("Sizes at division")
+axes[2,0].set_ylabel("Density")
+axes[2,0].grid()
 
 # synthetic data
-ax2.hist(synthetic_ages, bins=40, density=True)
-ax2.set_title(f"Synthetic ages distribution for B(a)=a**{power}")
-ax2.set_xlabel("Age at division")
+axes[0,1].hist(synthetic_A, bins=40, density=True)
+axes[0,1].set_title(f"Synthetic ages distribution for B(a)=a**{power}")
+axes[0,1].set_xlabel("Age at division")
+axes[0,1].grid()
+
+axes[1,1].hist(synthetic_Xb, bins=40, density=True)
+axes[1,1].set_title(f"Synthetic sizes at birth distribution for B(a)=a**{power}")
+axes[1,1].set_xlabel("Size at birth")
+axes[1,1].grid()
+
+axes[2,1].hist(synthetic_Xd, bins=40, density=True)
+axes[2,1].set_title(f"Synthetic sizes at division distribution for B(a)=a**{power}")
+axes[2,1].set_xlabel("Size at division")
+axes[2,1].grid()
 
 plt.tight_layout()
 plt.savefig('outputs/synthetic_ages.png')
