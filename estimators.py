@@ -23,7 +23,7 @@ def kernel_estimation(observations, alpha):
     denom = np.array(denom_list)
     
     # handling division by zero by setting a mask to compute survival function only when there are more than k individuals
-    k = 1
+    k = 4
     valid = denom > k
     
     result = np.full_like(B_hat, np.nan)
@@ -55,18 +55,9 @@ def find_best_alpha(observations, B, alphas):
 
 
 # test
-PATH_LIN = "data/lin_Lydia2901_new_MDJ_ad_sb_sd.txt"
-lin = pd.read_csv(PATH_LIN, header=None, names=["ad", "sb", "sd"])
-real_A = lin["ad"]
-real_Xb = lin["sb"]
-real_Xd = lin["sd"]
-a_max = np.max(real_A)
-print(a_max)
-
 PATH_SYNTH_AGE_LIN = "data/synthetic_lin_age_model.txt"
 synth_lin_age = pd.read_csv(PATH_SYNTH_AGE_LIN, header=None, names=["ad", "sb", "sd"])
 synth_real_ages = synth_lin_age["ad"]
-print(synth_real_ages)
 
 def B_power(a):
     return a**2
@@ -110,4 +101,5 @@ axes[1].legend()
 plt.tight_layout()
 
 output_path = "outputs/synthetic_vs_estimated.png"
+# with B_power=2, we have huge variance at large ages, not surprising because we have very few samples of old ages given this form of B
 plt.savefig(output_path)
