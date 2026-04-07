@@ -67,7 +67,7 @@ growth_rate = 0.53325 #found manually for B_power (power=2), to avoid explosion 
 
 synthetic_data = simulate_lineage(B_power, N, growth_rate, a_max, Xbar)
 print(synthetic_data.shape)
-np.savetxt("data/lin_synthetic_ages.txt", synthetic_data)
+np.savetxt("data/synthetic_lin_age_model.txt", synthetic_data)
 synthetic_A = synthetic_data[:,0]
 synthetic_Xb = synthetic_data[:,1]
 synthetic_Xd = synthetic_data[:,2]
@@ -113,4 +113,4 @@ axes[2,1].set_xlabel("Size at division")
 axes[2,1].grid()
 
 plt.tight_layout()
-plt.savefig('outputs/synthetic_data_distrib.png')
+plt.savefig('outputs/synthetic_lin_age_model.png')
