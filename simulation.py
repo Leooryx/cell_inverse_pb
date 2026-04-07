@@ -113,4 +113,4 @@ axes[2,1].set_xlabel("Size at division")
 axes[2,1].grid()
 
 plt.tight_layout()
-plt.savefig('outputs/synthetic_ages.png')
+plt.savefig('outputs/synthetic_data_distrib.png')
