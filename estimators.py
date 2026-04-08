@@ -69,7 +69,7 @@ alphas = np.linspace(0.05, 0.5, 50)
 best_a, min_m, history = find_best_alpha(synth_real_ages, B_power, alphas)
 
 print(f"Best Alpha found: {best_a:.4f}")
-print(f"Minimum MSE: {min_m:.6f}")
+print(f"Minimum MSE: {min_m:.3f}")
 
 B_estimated = kernel_estimation(synth_real_ages, best_a)
 B_synthetic = B_power(age_points)
@@ -90,7 +90,7 @@ axes[0].legend()
 # --- Right: B vs B_hat ---
 axes[1].plot(age_points, B_synthetic, color='black', lw=2, label='Synthetic B')
 axes[1].plot(age_points, B_estimated, color='blue', linestyle='--', lw=2,
-             label=f'Estimated B, alpha={best_a:.2f}')
+             label=f'Estimated B, alpha={best_a:.2f}, MSE={min_m:.3f}')
 axes[1].set_title('Division Rate Estimation')
 axes[1].set_xlabel("Age at division")
 axes[1].set_ylabel("Division rate B(a)")

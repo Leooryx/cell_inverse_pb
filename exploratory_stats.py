@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from scipy import stats
+import statsmodels.api as sm
 import os
 
 OUTPUT_DIR = "outputs"
@@ -55,7 +55,7 @@ plt.close()
 
 
 # ______________________
-# Relations between variables
+# 2. Relations between variables
 # ______________________
 
 pairs = [("sb", "sd"), ("sb", "ad"), ("sd", "ad")]
@@ -85,15 +85,18 @@ plt.close()
 
 
 # _____________________
-# Estimation of the size growth rate
+# 3. Estimation of the size growth rate
 
 # sd = sb*exp(\lambda*ad) --> len(sd/sb) = \lambda * ad 
 # _____________________
 
-lambdas = {}
+results = {
+    "Lineage": {},
+    "Population": {}
+}
 
-fig, axes = plt.subplots(1, 2, figsize=(11, 5))
-fig.suptitle("Estimation of $\lambda$ (size growth rate) by regression\n" "$\ln(s_d/s_d) = \lambda a_d$") #can separate two terminated str sequences with a simple space
+fig, axes = plt.subplots(1, 2, figsize=(10, 6))
+fig.suptitle("Estimation of g (size growth rate) by regression: $ln(s_d/s_d) = g*a_d$") 
 
 for ax, (name, data) in zip(axes, [("Lineage", lin), ("Population", pop)]):
     
@@ -101,33 +104,86 @@ for ax, (name, data) in zip(axes, [("Lineage", lin), ("Population", pop)]):
     X = data["ad"].values
     
     # computations without intercept
-    lam = np.dot(X, Y)/np.dot(X, X)
-    Y_pred = lam * X
-    ss_res = np.sum((Y - Y_pred)**2)
-    ss_tot = np.sum((Y - Y.mean())**2)
-    r2 = 1 - ss_res / ss_tot
+    model_1 = sm.OLS(Y,X).fit()
+    g_1 = model_1.params[0]
+    p_value_1 = model_1.pvalues[0]
+    r2_1 = model_1.rsquared
 
     # computations with intercept, using the stats package
-    lambda_intercept, intercept, r_intercept, *_ = stats.linregress(X,Y)
+    X_intercept = sm.add_constant(X)   # adds intercept
+    model_2 = sm.OLS(Y, X_intercept).fit()
 
-    lambdas[name] = lam
-    print(name)
-    print(f"$\lambda$ (sans intercept) = {lam:.3f}, R^2 = {r2:.3f}")
-    print(f"$\lambda$ (avec intercept) = {lambda_intercept:.3f}, intercept = {intercept:.3f}, R^2 = {r_intercept:.3f}")
+    g_2 = model_2.params[1]
+    intercept = model_2.params[0]
+    p_value_2 = model_2.pvalues[1]
+    r2_2 = model_2.rsquared
+
+    results[name] = {
+        "g (no intercept)": g_1,
+        "R² (no intercept)": r2_1,
+        "p-value (no intercept)": p_value_1,
+        "g (with intercept)": g_2,
+        "intercept": intercept,
+        "R² (with intercept)": r2_2,
+        "p-value (with intercept)": p_value_2,
+    }
+    
+    print(f"g (without intercept) = {g_1:.3f}, R^2 = {r2_1:.3f}, p_value = {p_value_1:.5f}")
+    print(f"g (with intercept) = {g_2:.3f}, intercept = {intercept:.3f}, R^2 = {r2_2:.3f}, p_value = {p_value_2:.5f}")
     
     ax.scatter(X, Y, alpha=0.3, s=5, color=colors[name], label="data")
     xfit = np.linspace(0, X.max(), 200)
-    ax.plot(xfit, lam * xfit, label=f"$\lambda$ (sans intercept) = {lam:.3f} (R^2 = {r2:.3f})")
-    ax.plot(xfit, lambda_intercept * xfit, color="gray", linestyle='--', label=f"$\lambda$ (avec intercept) = {lambda_intercept:.3f} (R^2 = {r_intercept:.3f})")
-    ax.set_xlabel("Age at division ($a_d$)")
-    ax.set_ylabel("$\ln(s_d / s_b)$")
-    ax.set_title(name)
+    ax.plot(xfit, g_1 * xfit, label=f"Without intercept: g={g_1:.3f}")
+    ax.plot(xfit, g_2 * xfit, color="gray", linestyle='--', label=f"With intercept: g={g_2:.3f}")
+    ax.set_xlabel(r"Age at division ($a_d$)")
+    ax.set_ylabel(r"$ln(s_d / s_b)$")
+    ax.set_title(f"{name}")
     ax.legend()
     ax.tick_params()
-plt.tight_layout()
+
+
+
+plt.tight_layout() 
 plt.savefig(f"{OUTPUT_DIR}/3_regression.png")
 plt.close()
 
+# table for clean illustration
+fig, ax = plt.subplots(figsize=(8, 5))  
+ax.axis('off')  # remove axes
 
+row_labels = [
+    "g (no intercept)",
+    "R² (no intercept)",
+    "p-value (no intercept)",
+    "g (with intercept)",
+    "intercept",
+    "R² (with intercept)",
+    "p-value (with intercept)",
+]
 
+col_labels = ["Lineage", "Population"]
 
+table_data = []
+for row in row_labels:
+    table_data.append([
+        f"{results['Lineage'][row]:.3e}" if "p-value" in row else f"{results['Lineage'][row]:.3f}",
+        f"{results['Population'][row]:.3e}" if "p-value" in row else f"{results['Population'][row]:.3f}",
+    ])
+
+table = ax.table(
+    cellText=table_data,
+    rowLabels=row_labels,
+    colLabels=col_labels,
+    loc='center',     
+    cellLoc='center',
+    rowLoc='center'
+)
+
+# Styling
+table.auto_set_font_size(False)
+table.set_fontsize(10)
+table.scale(1.2, 1.5)
+
+plt.tight_layout()
+plt.savefig(f"{OUTPUT_DIR}/3_regtable.png")
+plt.close()
