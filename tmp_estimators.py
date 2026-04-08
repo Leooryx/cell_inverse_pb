@@ -43,7 +43,7 @@ Xbar = np.mean(real_Xb)
 
 growth_rate = 0.032 #according to regression
 
-alpha_grid = np.linspace(0.05, 0.5, 10) #TODO: maybe choose better grid !!!!!
+alpha_grid = np.logspace(np.log10(0.01), np.log10(2.0), num=15) #TODO: maybe choose better grid !!!!!
 
 
 best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_A, alpha_grid, simulate_lineage_age, growth_rate, a_max, Xbar)

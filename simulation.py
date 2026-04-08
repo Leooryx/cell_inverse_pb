@@ -41,7 +41,7 @@ def simulate_lineage_age(B, num_samples, growth_rate, a_max, Xbar):
     Xd = []
     X_current = Xbar
 
-    for _ in tqdm(range(num_samples)):
+    for _ in range(num_samples): #tqdm(range(num_samples)):
         a_div = sample_division_age(B, a_max, B_max)
         x_div = X_current*np.exp(growth_rate*a_div)
         A.append(np.round(a_div,3))
