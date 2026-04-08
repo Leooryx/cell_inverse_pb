@@ -1,6 +1,10 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from tqdm import tqdm
+from scipy.stats import norm
+
+np.random.seed(42)
 
 def gaussian_kernel(z, alpha):
     return (1.0 / (np.sqrt(2 * np.pi) * alpha)) * np.exp(-0.5 * (z / alpha)**2)
@@ -9,27 +13,22 @@ def kernel_estimation(observations, alpha):
     obs = np.asarray(observations)
     a_grid = np.linspace(np.min(obs), np.max(obs), len(obs))
     
-    B_hat = []
+    numer_list = []
     denom_list = []
     
     for a in a_grid:
-        numerator = np.sum(gaussian_kernel(a - obs, alpha))
-        denominator = np.sum(obs >= a)
-        
-        B_hat.append(numerator)
-        denom_list.append(denominator)
+        z = (a - observations) / alpha 
+        numer = np.sum(gaussian_kernel(a - obs, alpha))
+        denom = np.sum(1-norm.cdf(z))
+        numer_list.append(numer)
+        denom_list.append(denom)
     
-    B_hat = np.array(B_hat)
-    denom = np.array(denom_list)
+    B_hat = np.array(numer_list) / np.array(denom_list) 
     
-    # handling division by zero by setting a mask to compute survival function only when there are more than k individuals
-    k = 4
-    valid = denom > k
-    
-    result = np.full_like(B_hat, np.nan)
-    result[valid] = B_hat[valid] / denom[valid]
-    
-    return result
+    return B_hat
+
+
+    # Handling division by zero: nan works better than denom+1
 
 def find_best_alpha(observations, B, alphas):
     obs = np.asarray(observations)
@@ -40,7 +39,7 @@ def find_best_alpha(observations, B, alphas):
     
     B_true = B(a_grid)
 
-    for alpha in alphas:
+    for alpha in tqdm(alphas):
         B_hat = kernel_estimation(obs, alpha)
         valid = ~np.isnan(B_hat)
         mse = np.mean((B_hat[valid] - B_true[valid])**2)

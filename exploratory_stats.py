@@ -5,6 +5,8 @@ import matplotlib.gridspec as gridspec
 import statsmodels.api as sm
 import os
 
+np.random.seed(42)
+
 OUTPUT_DIR = "outputs"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 PATH_POP = "data/pop_Eric0822_MDJ_sb_sd_ad.txt"
