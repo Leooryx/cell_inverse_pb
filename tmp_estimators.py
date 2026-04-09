@@ -43,7 +43,7 @@ Xbar = np.mean(real_Xb)
 
 growth_rate = 0.032 #according to regression
 
-alpha_grid = np.logspace(np.log10(0.01), np.log10(2.0), num=15) #TODO: maybe choose better grid !!!!!
+alpha_grid = np.linspace(12, 22, 100)
 
 
 best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_A, alpha_grid, simulate_lineage_age, growth_rate, a_max, Xbar)
@@ -54,12 +54,12 @@ print("min dist:", np.min(dist_hist))
 # Plotting
 fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-# --- Left: MSE history ---
+# --- Left: Wasserstein history ---
 axes[0].plot(alpha_grid, dist_hist, lw=2)
 axes[0].axvline(best_alpha, linestyle='--', label=f'Best alpha = {best_alpha:.3f}')
-axes[0].set_title("MSE vs Alpha")
+axes[0].set_title("Wasserstein distance vs Alpha")
 axes[0].set_xlabel("Alpha")
-axes[0].set_ylabel("MSE")
+axes[0].set_ylabel("Wasserstein distance")
 axes[0].grid(True, alpha=0.3)
 axes[0].legend()
 
