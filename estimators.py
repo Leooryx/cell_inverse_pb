@@ -28,7 +28,6 @@ def kernel_estimation_cdf(observations, alpha):
     return B_hat
 
 
-    # Handling division by zero: nan works better than denom+1
 
 def find_best_alpha(observations, B, alphas):
     obs = np.asarray(observations)
@@ -103,3 +102,7 @@ if __name__ == '__main__':
     output_path = "outputs/synthetic_vs_estimated.png"
     # with B_power=2, we have huge variance at large ages, not surprising because we have very few samples of old ages given this form of B
     plt.savefig(output_path)
+    plt.close()
+
+
+
