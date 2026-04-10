@@ -1,7 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
-from tqdm import tqdm
 
 np.random.seed(42)
 
@@ -16,35 +14,41 @@ def f_density(a, B):
     integral = np.sum(B(steps)) * steps
     return B(a) * np.exp(-integral)
 
-def sample_division_age(B, a_max, B_max):
+
+def _to_array(B, grid):
+    """converts the function B into a numpy array because faster and simulation needs to be fast """
+    return np.asarray(B(grid))
+
+
+def sample_division_age(B, a_max, B_max, dt):
     """Simulate one division using thinning method"""
-    a=0.0
+    
+    a=0.0 #we always start at age zero
+    
     while True:
-        a += np.random.exponential(1/B_max) #next jump
+        a += np.random.exponential(1/B_max) #accumulation of "arrival"/jumping times
         if a > a_max * 1.1 : #safety margin
             return a_max
-        idx = int(round(a / 0.01))
-        idx = max(0, min(idx, len(B) - 1)) #TODO: maybe needs a better implementation to handle indices
-        if np.random.rand() <= B[idx]/B_max: #probability of acceptation
+        if np.random.rand() <= B(a)/B_max: #probability of acceptation
             return a
 
 
 # a_max and Xbar will come from real data
-def simulate_lineage_age(B, num_samples, growth_rate, a_max, Xbar):
+def simulate_lineage_age(B, grid, num_samples, growth_rate, a_max, Xbar):
     """Simulate many samples"""
-    grid = np.linspace(0, a_max, len(B))
-    if isinstance(B, np.ndarray): #better than typing "if type(B) == ..."
-        B_max = np.max(B)*1.1
-    else :
-        B_max = np.max(B(grid)) * 1.1 #safety margin
+    
+    B_arr = _to_array(B, grid)
+    B_max = np.max(B_arr)*1.1 #safety margin
+    dt = a_max / len(grid)
+    
     A = []
     Xb = []
     Xd = []
-    X_current = Xbar #initialisation, but maybe it influences data too much??
+    X_current = Xbar #initialisation, but maybe it influences data too much?? --> burn in??
 
     for _ in range(num_samples): #tqdm(range(num_samples)):
-        A_div = sample_division_age(B, a_max, B_max)
-        X_div = X_current*np.exp(growth_rate*A_div)
+        A_div = sample_division_age(B, a_max, B_max, dt)
+        X_div = X_current * np.exp(growth_rate*A_div)
         A.append(np.round(A_div,3))
         Xb.append(np.round(X_current, 3))
         Xd.append(np.round(X_div, 3))
@@ -105,7 +109,7 @@ if __name__ == '__main__':
 
     
     N=2000
-    power=2
+    power=1
 
     PATH_LIN = "data/lin_Lydia2901_new_MDJ_ad_sb_sd.txt"
     lin = pd.read_csv(PATH_LIN, header=None, names=["ad", "sb", "sd"])

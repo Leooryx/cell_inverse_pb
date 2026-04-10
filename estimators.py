@@ -28,38 +28,36 @@ def kernel_estimation_cdf(observations, alpha):
     return B_hat
 
 
-
-def find_best_alpha(observations, B, alphas):
-    obs = np.asarray(observations)
-    a_grid = np.linspace(min(obs), max(obs), len(obs))
-    best_alpha = None
-    min_mse = float('inf')
-    mse_history = []
-    
-    B_true = B(a_grid)
-
-    for alpha in tqdm(alphas):
-        B_hat = kernel_estimation_cdf(obs, alpha)
-        valid = ~np.isnan(B_hat)
-        mse = np.mean((B_hat[valid] - B_true[valid])**2)
-        mse_history.append(mse)
-        
-        if mse < min_mse:
-            min_mse = mse
-            best_alpha = alpha
-            
-    return best_alpha, min_mse, mse_history
-
-
+#for the following test below:
 if __name__ == '__main__':
+    def find_best_alpha(observations, B, alphas):
+        obs = np.asarray(observations)
+        a_grid = np.linspace(min(obs), max(obs), len(obs))
+        best_alpha = None
+        min_mse = float('inf')
+        mse_history = []
+        
+        B_true = B(a_grid)
 
-    # test
+        for alpha in tqdm(alphas):
+            B_hat = kernel_estimation_cdf(obs, alpha)
+            valid = ~np.isnan(B_hat)
+            mse = np.mean((B_hat[valid] - B_true[valid])**2)
+            mse_history.append(mse)
+            
+            if mse < min_mse:
+                min_mse = mse
+                best_alpha = alpha
+                
+        return best_alpha, min_mse, mse_history
+
+
     PATH_SYNTH_AGE_LIN = "data/synthetic_lin_age_model.txt"
     synth_lin_age = pd.read_csv(PATH_SYNTH_AGE_LIN, header=None, names=["ad", "sb", "sd"])
     synth_real_ages = synth_lin_age["ad"]
 
     def B_power(a):
-        return a**2
+        return a**1
 
 
     age_points = np.linspace(min(synth_real_ages), max(synth_real_ages), len(synth_real_ages))
