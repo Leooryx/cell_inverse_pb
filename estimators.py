@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy.stats import norm
+
 from plots import plot_estimator_results
 
 np.random.seed(42)
@@ -19,7 +20,7 @@ def B_lineage_age(observations, alpha):
     numer_list = []
     denom_list = []
 
-    omega_n = np.sqrt(n)
+    #omega_n = np.sqrt(n)
     
     for a in a_grid:
         z = (a - observations) / alpha 
@@ -33,6 +34,26 @@ def B_lineage_age(observations, alpha):
     
     return B_hat
 
+def B_lineage_size(observations, alpha):
+    obs = np.asarray(observations)
+    x_grid = np.linspace(np.min(obs), np.max(obs), len(obs))
+
+    numer_list = []
+    denom_list = []
+
+    for x in x_grid:
+        z1 = (x - obs)/alpha
+        z2 = (x - 2*obs)/alpha
+        numer = np.sum(gaussian_kernel(x-obs, alpha))
+        denom = np.sum(norm.cdf(z1) - norm.cdf(z2))
+        numer_list.append(numer)
+        denom_list.append(denom)
+
+    B_hat = np.array(numer_list) / np.array(denom_list)
+
+    return B_hat
+
+
 
 def find_best_alpha(estimator, observations, B, alphas):
     obs = np.asarray(observations)
@@ -45,8 +66,7 @@ def find_best_alpha(estimator, observations, B, alphas):
 
     for alpha in tqdm(alphas):
         B_hat = estimator(obs, alpha)
-        valid = ~np.isnan(B_hat)
-        mse = np.mean((B_hat[valid] - B_true[valid])**2)
+        mse = np.mean((B_hat - B_true)**2)
         mse_history.append(mse)
         
         if mse < min_mse:
@@ -55,7 +75,9 @@ def find_best_alpha(estimator, observations, B, alphas):
             
     return best_alpha, min_mse, mse_history
 
-def verify_estimator(estimator, truth, data_from_truth):
+
+
+def verify_estimator(estimator, truth, data_from_truth, age_or_size):
     points = np.linspace(min(data_from_truth), max(data_from_truth), len(data_from_truth))
     alphas = np.linspace(0.01, 1, 100) 
     best_alpha, min_m, history = find_best_alpha(estimator, data_from_truth, truth,  alphas)
@@ -65,22 +87,31 @@ def verify_estimator(estimator, truth, data_from_truth):
     truth_profile = B_power(points)
 
     output_path="synthetic_vs_estimated.png"
-    plot_estimator_results(alphas, history, best_alpha, points, truth_profile, estimation, min_m, output_path, "age")
+    plot_estimator_results(alphas, history, best_alpha, points, truth_profile, estimation, min_m, output_path, age_or_size)
 
 
 
 # test to verify if the estimator can recover the division rate if it was known!
 if __name__ == '__main__':
-    from plots import plot_estimator_results
-
-    PATH_SYNTH_AGE_LIN = "data/synthetic_lin_age_model.txt"
-    synth_lin_age = pd.read_csv(PATH_SYNTH_AGE_LIN, header=None, names=["ad", "sb", "sd"])
-    synth_real_ages = synth_lin_age["ad"]
-
+    test_age = False
+    test_size = True
+    
     def B_power(a):
         return a**1
+
+    if test_age:
+        PATH_SYNTH_AGE_LIN = "data/synthetic_lin_age_model.txt"
+        synth_lin_age = pd.read_csv(PATH_SYNTH_AGE_LIN, header=None, names=["ad", "sb", "sd"])
+        synth_real_ages = synth_lin_age["ad"]
+        
+        verify_estimator(B_lineage_age, B_power, synth_real_ages, "age")
     
-    verify_estimator(B_lineage_age, B_power, synth_real_ages)
+    if test_size:
+        PATH_SYNTH_SIZE_LIN = "data/synthetic_lin_size_model.txt"
+        synth_lin_size = pd.read_csv(PATH_SYNTH_SIZE_LIN, header=None, names=["ad", "sb", "sd"])
+        synth_real_sizes = synth_lin_size["sd"]
+        
+        verify_estimator(B_lineage_size, B_power, synth_real_sizes, "size")
 
 
     

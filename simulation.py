@@ -55,25 +55,29 @@ def simulate_lineage_age(B, grid, num_samples, growth_rate, Xbar):
 
 
 
-def sample_division_size(X_current, B, B_max):
+def sample_division_size(X_current, B, B_max, g):
     x = X_current 
+    t = 0
     while True:
-        x += np.random.exponential(1/B_max)
-        if np.random.rand() < B(x)/B_max:
+        t += np.random.exponential(1/B_max) #modified
+        x = X_current * np.exp(g * t)
+        if np.random.rand() < (B(x)* g * x)/B_max:
+            #print((B(x)* g * x)/B_max)
+            
             return x
 
-
+from tqdm import tqdm
 def simulate_lineage_size(B, grid, num_samples, growth_rate, Xbar):
     B_arr = _to_array(B,grid)
-    B_max=np.max(B_arr)*1.1
+    B_max=np.max(B_arr *grid * growth_rate)*1.1 
     
     A = []
     Xb = []
     Xd = []
     X_current = Xbar #initialisation
 
-    for _ in range(num_samples):
-        X_div = sample_division_size(X_current, B, B_max)
+    for _ in tqdm(range(num_samples)):
+        X_div = sample_division_size(X_current, B, B_max, growth_rate)
         A_div = (1/growth_rate)*np.log(X_div / X_current)
         A.append(np.round(A_div, 3))
         Xb.append(np.round(X_current, 3))
@@ -90,7 +94,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from plots import plot_simulation_comparison
 
-    test_age = True
+    test_age = False
     test_size = True
 
     
@@ -104,12 +108,13 @@ if __name__ == '__main__':
     real_Xd = lin["sd"]
     Xbar = np.mean(real_Xb)
     a_max=np.max(real_A)
-    growth_rate = 0.545
+    
 
     def B_power(a):
             return a**power
 
     if test_age:
+        growth_rate = 0.545
         grid = np.linspace(0, a_max, 2000)
         
         synthetic_data = simulate_lineage_age(B_power, grid, N, growth_rate, Xbar)
@@ -130,6 +135,7 @@ if __name__ == '__main__':
 
 
     if test_size:
+        growth_rate = 0.6
         s_max = np.max(real_Xd)
         grid = np.linspace(0, s_max, 2000)
         synthetic_size_data = simulate_lineage_size(B_power, grid, N, growth_rate, Xbar)
