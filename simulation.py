@@ -20,26 +20,23 @@ def _to_array(B, grid):
     return np.asarray(B(grid))
 
 
-def sample_division_age(B, a_max, B_max, dt):
+def sample_division_age(B, B_max):
     """Simulate one division using thinning method"""
     
     a=0.0 #we always start at age zero
     
     while True:
-        a += np.random.exponential(1/B_max) #accumulation of "arrival"/jumping times
-        if a > a_max * 1.1 : #safety margin
-            return a_max
+        a += np.random.exponential(1/B_max) #accumulation of arrival/jumping times
         if np.random.rand() <= B(a)/B_max: #probability of acceptation
             return a
 
 
 # a_max and Xbar will come from real data
-def simulate_lineage_age(B, grid, num_samples, growth_rate, a_max, Xbar):
+def simulate_lineage_age(B, grid, num_samples, growth_rate, Xbar):
     """Simulate many samples"""
     
     B_arr = _to_array(B, grid)
     B_max = np.max(B_arr)*1.1 #safety margin
-    dt = a_max / len(grid)
     
     A = []
     Xb = []
@@ -47,7 +44,7 @@ def simulate_lineage_age(B, grid, num_samples, growth_rate, a_max, Xbar):
     X_current = Xbar #initialisation, but maybe it influences data too much?? --> burn in??
 
     for _ in range(num_samples): #tqdm(range(num_samples)):
-        A_div = sample_division_age(B, a_max, B_max, dt)
+        A_div = sample_division_age(B, B_max)
         X_div = X_current * np.exp(growth_rate*A_div)
         A.append(np.round(A_div,3))
         Xb.append(np.round(X_current, 3))
@@ -58,39 +55,25 @@ def simulate_lineage_age(B, grid, num_samples, growth_rate, a_max, Xbar):
 
 
 
-def sample_division_size(X_current, B, s_max, B_max):
-    X_proposal = X_current
+def sample_division_size(X_current, B, B_max):
+    x = X_current 
     while True:
-        delta_x = np.random.exponential(1/B_max)
-        X_proposal += delta_x
-
-        """#safety break in case B is too small
-        if X_proposal > s_max*2:
-            X_div = X_proposal
-            return X_div"""
-        
-        #acceptance
-        idx = int(round(X_proposal / (s_max/(len(B)-1))))
-        idx = max(0, min(idx, len(B) - 1))
-        accept_prob = B[idx]/B_max
-        if np.random.rand() < accept_prob:
-            X_div = X_proposal
-            return X_div
+        x += np.random.exponential(1/B_max)
+        if np.random.rand() < B(x)/B_max:
+            return x
 
 
-def simulate_lineage_size(B, num_samples, growth_rate, s_max, Xbar):
-    grid = np.linspace(0, s_max, len(B))
-    if isinstance(B, np.ndarray):
-        B_max=np.max(B)*1.1
-    else:
-        B_max=np.max(B(grid))*1.1
+def simulate_lineage_size(B, grid, num_samples, growth_rate, Xbar):
+    B_arr = _to_array(B,grid)
+    B_max=np.max(B_arr)*1.1
+    
     A = []
     Xb = []
     Xd = []
     X_current = Xbar #initialisation
 
-    for _ in tqdm(range(num_samples)):
-        X_div = sample_division_size(X_current, B, s_max, B_max)
+    for _ in range(num_samples):
+        X_div = sample_division_size(X_current, B, B_max)
         A_div = (1/growth_rate)*np.log(X_div / X_current)
         A.append(np.round(A_div, 3))
         Xb.append(np.round(X_current, 3))
@@ -103,6 +86,8 @@ def simulate_lineage_size(B, num_samples, growth_rate, s_max, Xbar):
 
 
 if __name__ == '__main__':
+
+    import matplotlib.pyplot as plt
 
     test_age = False
     test_size = True
@@ -117,13 +102,16 @@ if __name__ == '__main__':
     real_Xb = lin["sb"]
     real_Xd = lin["sd"]
     Xbar = np.mean(real_Xb)
-    growth_rate = 0.53325 #found manually for B_power (power=2), to avoid explosion or zero sizes
-    
+    a_max=np.max(real_A)
+    growth_rate = 0.545
+
+    def B_power(a):
+            return a**power
 
     if test_age:
-        a_max = np.max(real_A)
-        B_power = np.linspace(0, a_max, 1000)**power
-        synthetic_data = simulate_lineage_age(B_power, N, growth_rate, a_max, Xbar)
+        grid = np.linspace(0, a_max, 2000)
+        
+        synthetic_data = simulate_lineage_age(B_power, grid, N, growth_rate, Xbar)
         np.savetxt("data/synthetic_lin_age_model.txt", synthetic_data, delimiter=",")
         synthetic_A = synthetic_data[:,0]
         synthetic_Xb = synthetic_data[:,1]
@@ -176,20 +164,18 @@ if __name__ == '__main__':
 
 
     if test_size:
-    
-        growth_rate = 0.6 # found empirically
         s_max = np.max(real_Xd)
-        B_power = np.linspace(0, s_max, 1000)**power
-        synthetic_size_data = simulate_lineage_size(B_power, N, growth_rate, s_max, Xbar)
+        grid = np.linspace(0, s_max, 2000)
+        synthetic_size_data = simulate_lineage_size(B_power, grid, N, growth_rate, Xbar)
         np.savetxt("data/synthetic_lin_size_model.txt", synthetic_size_data, delimiter=",")
         synthetic_A = synthetic_size_data[:,0]
         synthetic_Xb = synthetic_size_data[:,1]
         synthetic_Xd = synthetic_size_data[:,2]
-        synthetic_Xd_max = np.round(np.max(synthetic_Xd),3)
+        synthetic_A_max = np.round(np.max(synthetic_A),3)
         synthetic_Xbar = np.round(np.mean(synthetic_Xb), 3)
-        print("real s_max:", s_max, "/ real X_bar:", Xbar)
-        print("fake s_max:", synthetic_Xd_max, "/ fake Xbar:", synthetic_Xbar)
-        B_power = np.linspace(0, s_max, 1000)**power
+        print("real a_max:", a_max, "/ real X_bar:", Xbar)
+        print("fake a_max:", synthetic_A_max, "/ fake Xbar:", synthetic_Xbar)
+        
 
         #Visualization
         fig, axes = plt.subplots(3, 2, figsize=(12, 6))
