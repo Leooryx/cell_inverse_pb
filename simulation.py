@@ -88,8 +88,9 @@ def simulate_lineage_size(B, grid, num_samples, growth_rate, Xbar):
 if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
+    from plots import plot_simulation_comparison
 
-    test_age = False
+    test_age = True
     test_size = True
 
     
@@ -121,46 +122,11 @@ if __name__ == '__main__':
         print("real a_max:", a_max, "/ real X_bar:", Xbar)
         print("fake a_max:", synthetic_A_max, "/ fake Xbar:", synthetic_Xbar)
 
-        #Visualization
-        fig, axes = plt.subplots(3, 2, figsize=(12, 6))
-        #real data
-        axes[0,0].hist(real_A, bins=40, density=True)
-        axes[0,0].set_title("Real ages distribution")
-        axes[0,0].set_xlabel("Age at division")
-        axes[0,0].set_ylabel("Density")
-        axes[0,0].grid()
 
-        axes[1,0].hist(real_Xb, bins=40, density=True)
-        axes[1,0].set_title("Real sizes at birth distribution")
-        axes[1,0].set_xlabel("Size at birth")
-        axes[1,0].set_ylabel("Density")
-        axes[1,0].grid()
+        output_path = "synthetic_lin_age_model.png"
 
-        axes[2,0].hist(real_Xd, bins=40, density=True)
-        axes[2,0].set_title("Real sizes at division distribution")
-        axes[2,0].set_xlabel("Sizes at division")
-        axes[2,0].set_ylabel("Density")
-        axes[2,0].grid()
+        plot_simulation_comparison(real_A, real_Xb, real_Xd, synthetic_A, synthetic_Xb, synthetic_Xd, output_path)
 
-        # synthetic data
-        axes[0,1].hist(synthetic_A, bins=40, density=True)
-        axes[0,1].set_title(f"Synthetic ages distribution for B(a)=a**{power}")
-        axes[0,1].set_xlabel("Age at division")
-        axes[0,1].grid()
-
-        axes[1,1].hist(synthetic_Xb, bins=40, density=True)
-        axes[1,1].set_title(f"Synthetic sizes at birth distribution for B(a)=a**{power}")
-        axes[1,1].set_xlabel("Size at birth")
-        axes[1,1].grid()
-
-        axes[2,1].hist(synthetic_Xd, bins=40, density=True)
-        axes[2,1].set_title(f"Synthetic sizes at division distribution for B(a)=a**{power}")
-        axes[2,1].set_xlabel("Size at division")
-        axes[2,1].grid()
-
-        plt.tight_layout()
-        plt.savefig('outputs/synthetic_lin_age_model.png')
-        plt.close()
 
 
     if test_size:
@@ -176,45 +142,6 @@ if __name__ == '__main__':
         print("real a_max:", a_max, "/ real X_bar:", Xbar)
         print("fake a_max:", synthetic_A_max, "/ fake Xbar:", synthetic_Xbar)
         
-
-        #Visualization
-        fig, axes = plt.subplots(3, 2, figsize=(12, 6))
-        #real data
-        axes[0,0].hist(real_A, bins=40, density=True)
-        axes[0,0].set_title("Real ages distribution")
-        axes[0,0].set_xlabel("Age at division")
-        axes[0,0].set_ylabel("Density")
-        axes[0,0].grid()
-
-        axes[1,0].hist(real_Xb, bins=40, density=True)
-        axes[1,0].set_title("Real sizes at birth distribution")
-        axes[1,0].set_xlabel("Size at birth")
-        axes[1,0].set_ylabel("Density")
-        axes[1,0].grid()
-
-        axes[2,0].hist(real_Xd, bins=40, density=True)
-        axes[2,0].set_title("Real sizes at division distribution")
-        axes[2,0].set_xlabel("Sizes at division")
-        axes[2,0].set_ylabel("Density")
-        axes[2,0].grid()
-
-        # synthetic data
-        axes[0,1].hist(synthetic_A, bins=40, density=True)
-        axes[0,1].set_title(f"Synthetic ages distribution for B(x)=x**{power}")
-        axes[0,1].set_xlabel("Age at division")
-        axes[0,1].grid()
-
-        axes[1,1].hist(synthetic_Xb, bins=40, density=True)
-        axes[1,1].set_title(f"Synthetic sizes at birth distribution for B(x)=x**{power}")
-        axes[1,1].set_xlabel("Size at birth")
-        axes[1,1].grid()
-
-        axes[2,1].hist(synthetic_Xd, bins=40, density=True)
-        axes[2,1].set_title(f"Synthetic sizes at division distribution for B(x)=x**{power}")
-        axes[2,1].set_xlabel("Size at division")
-        axes[2,1].grid()
-
-        plt.tight_layout()
-        plt.savefig('outputs/synthetic_lin_size_model.png')
-        plt.close()
-
+        output_path = 'synthetic_lin_size_model.png'
+        plot_simulation_comparison(real_A, real_Xb, real_Xd, synthetic_A, synthetic_Xb, synthetic_Xd, output_path)
+        

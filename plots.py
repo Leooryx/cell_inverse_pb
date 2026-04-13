@@ -6,7 +6,7 @@ _STYLE = dict(bins=40, density=True)
 
 def _save(fig, path):
     plt.tight_layout()
-    fig.savefig(path)
+    fig.savefig(f"outputs/{path}")
     plt.close(fig)
 
 
@@ -14,7 +14,7 @@ def _save(fig, path):
 # simulation.py plots
 # ---------------------------------------------------------------------------
 
-def plot_simulation_comparison(real_A, real_Xb, real_Xd, synthetic_A, synthetic_Xb, synthetic_Xd, power, output_path):
+def plot_simulation_comparison(real_A, real_Xb, real_Xd, synthetic_A, synthetic_Xb, synthetic_Xd, output_path):
     """ real data (left) vs synthetic data (right) distributions."""
     fig, axes = plt.subplots(3, 2, figsize=(12, 9))
 
