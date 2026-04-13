@@ -1,18 +1,5 @@
-"""plots.py — centralised visualisation for the cell division pipeline.
-
-All functions follow the same pattern:
-    - receive pre-computed data as arguments
-    - produce and save a figure
-    - close the figure to free memory
-"""
-
 import numpy as np
 import matplotlib.pyplot as plt
-
-
-# ---------------------------------------------------------------------------
-# Shared style helpers
-# ---------------------------------------------------------------------------
 
 _STYLE = dict(bins=40, density=True)
 
