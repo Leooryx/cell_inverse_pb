@@ -60,7 +60,7 @@ def plot_estimator_results(alphas, mse_history, best_alpha, points, B_synthetic,
     # B vs B_hat
     axes[1].plot(points, B_synthetic, color="black", lw=2, label="Synthetic B")
     axes[1].plot(points, B_estimated, color="blue", lw=2, ls="--", label=f"Estimated B, alpha={best_alpha:.3f},  MSE={min_mse:.3f}")
-    axes[1].set_title("Division Rate Estimation")
+    axes[1].set_title("Division rate estimation")
     axes[1].set_xlabel(f"{age_or_size} at division")
     axes[1].set_ylabel("Division rate B(a)")
     axes[1].grid(alpha=0.3)
@@ -83,7 +83,7 @@ def plot_main_results(alpha_grid, dist_hist, best_alpha, real_data, Best_B_hat, 
     # Wasserstein curve
     axes[0].plot(alpha_grid, dist_hist, lw=2)
     axes[0].axvline(best_alpha, linestyle="--", label=f"Best alpha = {best_alpha:.3f}")
-    axes[0].set_title("Wasserstein Distance vs Alpha")
+    axes[0].set_title("Wasserstein distance vs alpha")
     axes[0].set_xlabel("Alpha")
     axes[0].set_ylabel("Wasserstein distance")
     axes[0].grid(alpha=0.3)
