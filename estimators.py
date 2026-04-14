@@ -12,6 +12,7 @@ def gaussian_kernel(z, alpha):
     return (1.0 / (np.sqrt(2 * np.pi) * alpha)) * np.exp(-0.5 * (z / alpha)**2)
 
 # estimator for lineage age 
+from scipy.interpolate import interp1d
 def B_lineage_age(observations, alpha):
     obs = np.asarray(observations)
     n=len(obs)
@@ -31,8 +32,9 @@ def B_lineage_age(observations, alpha):
         denom_list.append(denom)
     
     B_hat = np.array(numer_list) / np.array(denom_list) 
+    B_func = interp1d(a_grid, B_hat, kind='linear', fill_value="extrapolate")
     
-    return B_hat
+    return B_func
 
 def B_lineage_size(observations, alpha):
     obs = np.asarray(observations)

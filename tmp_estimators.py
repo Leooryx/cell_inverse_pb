@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from simulation import simulate_lineage_age
-from estimators import kernel_estimation_cdf
+from estimators import B_lineage_age
 
 
 # we want to optimize the kernel regression with cdf to minimize wasserstein distance.abs
@@ -16,8 +16,8 @@ def grid_search_alpha(observations, alpha_grid, simulator, growth_rate, a_max, X
     best_alpha=None
     min_dist = float('inf')
     for alpha in tqdm(alpha_grid):
-        B_hat = kernel_estimation_cdf(obs, alpha)
-        simulated_data = simulator(B_hat, len(obs), growth_rate, a_max, Xbar)[:,0]
+        B_hat = B_lineage_age(obs, alpha)
+        simulated_data = simulator(Xbar, B_hat, growth_rate, len(obs))[:,0]
         dist = wasserstein_distance(obs, simulated_data)
         results.append(dist)
 
@@ -43,7 +43,7 @@ Xbar = np.mean(real_Xb)
 
 growth_rate = 0.032 #according to regression
 
-alpha_grid = np.linspace(12, 22, 100)
+alpha_grid = np.linspace(0.01, 1, 10)
 
 
 best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_A, alpha_grid, simulate_lineage_age, growth_rate, a_max, Xbar)
