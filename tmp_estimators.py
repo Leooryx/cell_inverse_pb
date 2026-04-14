@@ -16,8 +16,9 @@ def grid_search_alpha(observations, alpha_grid, simulator, growth_rate, a_max, X
     best_alpha=None
     min_dist = float('inf')
     for alpha in tqdm(alpha_grid):
-        B_hat = B_lineage_age(obs, alpha)
-        simulated_data = simulator(Xbar, B_hat, growth_rate, len(obs))[:,0]
+        np.random.seed(42) #same randomness for all samples
+        B_hat = B_lineage_age(obs, alpha)[1] #[1] for function instead of np.array
+        simulated_data = simulator(Xbar, a_max, B_hat, growth_rate, len(obs))[:,0]
         dist = wasserstein_distance(obs, simulated_data)
         results.append(dist)
 
@@ -43,7 +44,7 @@ Xbar = np.mean(real_Xb)
 
 growth_rate = 0.032 #according to regression
 
-alpha_grid = np.linspace(0.01, 1, 10)
+alpha_grid = np.linspace(0.01, 2, 100)
 
 
 best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_A, alpha_grid, simulate_lineage_age, growth_rate, a_max, Xbar)
@@ -65,7 +66,7 @@ axes[0].legend()
 
 # --- Right: B vs B_hat ---
 age_points = np.linspace(min(real_A), max(real_A), len(real_A))
-axes[1].plot(age_points, Best_B_hat, color='blue', linestyle='--', lw=2,
+axes[1].plot(age_points, Best_B_hat(age_points), color='blue', linestyle='--', lw=2,
              label=f'Estimated B, alpha={best_alpha:.2f}, Min_Wasserstein={np.min(dist_hist):.3f}')
 axes[1].set_title('Division Rate Estimation')
 axes[1].set_xlabel("Age at division")

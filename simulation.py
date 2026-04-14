@@ -31,7 +31,7 @@ def simulate_lineage_age(Xbar, a_max, B_func, growth_rate, num_samples, burn_in=
     all_ages = sampler(num_samples + burn_in)
     X_current = Xbar
     A, Xb, Xd = [], [], []
-    for i, A_div in tqdm(enumerate(all_ages)):
+    for i, A_div in enumerate(all_ages):
         X_div = X_current * np.exp(growth_rate * A_div)
         if i >= burn_in:
             A.append(np.round(A_div, 3))
