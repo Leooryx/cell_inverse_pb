@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy.stats import norm
+from scipy.interpolate import interp1d
 
 from plots import plot_estimator_results
 
@@ -12,7 +13,6 @@ def gaussian_kernel(z, alpha):
     return (1.0 / (np.sqrt(2 * np.pi) * alpha)) * np.exp(-0.5 * (z / alpha)**2)
 
 # estimator for lineage age 
-from scipy.interpolate import interp1d
 def B_lineage_age(observations, alpha):
     obs = np.asarray(observations)
     n=len(obs)
@@ -31,10 +31,10 @@ def B_lineage_age(observations, alpha):
         numer_list.append(numer)
         denom_list.append(denom)
     
-    B_hat = np.array(numer_list) / np.array(denom_list) 
-    B_func = interp1d(a_grid, B_hat, kind='linear', fill_value="extrapolate")
+    B_hat_array = np.array(numer_list) / np.array(denom_list) 
+    B_hat_func = interp1d(a_grid, B_hat_array, kind='linear', bounds_error=False, fill_value=(B_hat_array[0], B_hat_array[-1]))
     
-    return B_func
+    return [B_hat_array, B_hat_func]
 
 def B_lineage_size(observations, alpha):
     obs = np.asarray(observations)
@@ -51,9 +51,10 @@ def B_lineage_size(observations, alpha):
         numer_list.append(numer)
         denom_list.append(denom)
 
-    B_hat = 0.5*np.array(numer_list) / np.array(denom_list)
-
-    return B_hat
+    B_hat_array = 0.5*np.array(numer_list) / np.array(denom_list)
+    B_hat_func = interp1d(x_grid, B_hat_array, kind='linear', bounds_error=False, fill_value=(B_hat_array[0], B_hat_array[-1]))
+    
+    return [B_hat_array, B_hat_func]
 
 
 
@@ -67,7 +68,7 @@ def find_best_alpha(estimator, observations, B, alphas):
     B_true = B(a_grid)
 
     for alpha in tqdm(alphas):
-        B_hat = estimator(obs, alpha)
+        B_hat = estimator(obs, alpha)[0]
         mse = np.mean((B_hat - B_true)**2)
         mse_history.append(mse)
         
@@ -85,7 +86,7 @@ def verify_estimator(estimator, truth, data_from_truth, age_or_size):
     best_alpha, min_m, history = find_best_alpha(estimator, data_from_truth, truth,  alphas)
     print(f"Best Alpha found: {best_alpha:.4f}")
     print(f"Minimum MSE: {min_m:.3f}")
-    estimation = estimator(data_from_truth, best_alpha)
+    estimation = estimator(data_from_truth, best_alpha)[0]
     truth_profile = B_power(points)
 
     output_path="synthetic_vs_estimated.png"
@@ -95,7 +96,7 @@ def verify_estimator(estimator, truth, data_from_truth, age_or_size):
 
 # test to verify if the estimator can recover the division rate if it was known!
 if __name__ == '__main__':
-    test_age = False
+    test_age = True
     test_size = True
     
     def B_power(a):

@@ -77,5 +77,7 @@ axes[1].legend()
 plt.tight_layout()
 
 output_path = "outputs/7_kernel_lineage_age.png"
-# with B_power=2, we have huge variance at large ages, not surprising because we have very few samples of old ages given this form of B
 plt.savefig(output_path)
+
+# with B_power=2, we have huge variance at large ages, not surprising because we have very few samples of old ages given this form of B
+
