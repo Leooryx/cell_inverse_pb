@@ -1,93 +1,76 @@
 import numpy as np
 import pandas as pd
-from scipy.integrate import quad
-from scipy.optimize import brentq
+from scipy.interpolate import interp1d
+from scipy.integrate import cumulative_trapezoid
 import pandas as pd
+from tqdm import tqdm
 
 
 np.random.seed(42)
-
-# careful, i had many type errors when building tmp_estimators, needs to check if the original code here (in __main__) still works
-# 1. Age-dependent division rate
-# 1.1. Lineage at divisions
-
-
 
 def _to_array(B, grid):
     """converts the function B into a numpy array because faster and simulation needs to be fast """
     return np.asarray(B(grid))
 
 
-def sample_division_age(B, growth_rate):    
-    u = np.random.uniform(0,1)
-    target = -np.log(u)
+def sample_age_division(B_func, a_max, num_samples):
+    grid = np.linspace(0, a_max, num_samples)
+    B_vals = B_func(grid)
+    integral = cumulative_trapezoid(B_vals, grid, initial=0)
+    inv = interp1d(integral, grid, kind='linear', bounds_error=False, fill_value=(grid[0],grid[-1]))
 
-    def residual(a):
-        integral, _ = quad(B,0,a)
-        return integral - target
+    def sampler(n):
+        U = np.random.uniform(0,1, size=n)
+        targets = -np.log(U)
+        return inv(targets)
     
-    a_upper = 40
-    for _ in range(10):
-        if residual(a_upper) > 0:
-            break
-        a_upper *= 2
-    
-    a_div = brentq(residual, 0, a_upper, xtol=1e-8)
-    return a_div
-    
+    return sampler
 
-def simulate_lineage_age(Xbar, B, growth_rate, num_samples):
-    """Simulate many samples"""
-    
-    
+def simulate_lineage_age(Xbar, a_max, B_func, growth_rate, num_samples, burn_in=200):
+    sampler = sample_age_division(B_func, a_max, num_samples)
+    all_ages = sampler(num_samples + burn_in)
+    X_current = Xbar
     A, Xb, Xd = [], [], []
-    X_current = Xbar #initialisation, but maybe it influences data too much?? --> burn in??
-
-    for _ in range(num_samples): #tqdm(range(num_samples)):
-        A_div = sample_division_age(B, growth_rate)
-        X_div = X_current * np.exp(growth_rate*A_div)
-        A.append(np.round(A_div,3))
-        Xb.append(np.round(X_current, 3))
-        Xd.append(np.round(X_div, 3))
+    for i, A_div in tqdm(enumerate(all_ages)):
+        X_div = X_current * np.exp(growth_rate * A_div)
+        if i >= burn_in:
+            A.append(np.round(A_div, 3))
+            Xb.append(np.round(X_current, 3))
+            Xd.append(np.round(X_div, 3))
         X_current = X_div / 2
     
     return np.column_stack((A, Xb, Xd))
 
 
+def sample_size_division(B_func, x_max, num_samples):
 
-def sample_division_size(x_birth, B, growth_rate):
-    
-    u = np.random.uniform(0, 1)
-    target = -np.log(u)  
+    def sampler(x_birth):
+        U = np.random.uniform(0, 1)
+        local_grid = np.linspace(x_birth, x_max, num_samples)
+        B_local = B_func(local_grid)
+        H_local = cumulative_trapezoid(B_local, local_grid, initial=0)
+        H_local_inv = interp1d(H_local, local_grid, kind='linear',bounds_error=False,fill_value=(local_grid[0], local_grid[-1]))
+        return float(H_local_inv(-np.log(U)))
 
-    def residual(x):
-        integral, _ = quad(B, x_birth, x) # computes integral on [x_birth, x]
-        return integral - target
+    return sampler
 
-    #produces upper bound on x, keeps multiply by 2 until cumB is greater than 0 
-    x_upper = x_birth * 2
-    for _ in range(10):
-        if residual(x_upper) > 0:
-            break
-        x_upper *= 2 
+def simulate_lineage_size(Xbar, B_func, growth_rate, num_samples, x_max, burn_in=200):
 
-    x_div = brentq(residual, x_birth, x_upper, xtol=1e-8) #numerical solver to find zero on [x_birth, x]
-    return x_div
+    sampler = sample_size_division(B_func, x_max, num_samples)
 
-
-def simulate_lineage_size(Xbar, B, growth_rate, num_samples):
-    A, Xb, Xd = [], [], []
     X_current = Xbar
+    A, Xb, Xd = [], [], []
 
-    for _ in range(num_samples):
-        X_div = sample_division_size(X_current, B, growth_rate)
+    for i in range(num_samples + burn_in):
+        X_div = sampler(X_current)
         A_div = (1 / growth_rate) * np.log(X_div / X_current)
 
-        A.append(np.round(A_div, 3))
-        Xb.append(np.round(X_current, 3))
-        Xd.append(np.round(X_div, 3))
+        if i >= burn_in:
+            A.append(np.round(A_div, 3))
+            Xb.append(np.round(X_current, 3))
+            Xd.append(np.round(X_div, 3))
 
-        X_current = X_div / 2  
+        X_current = X_div / 2
 
     return np.column_stack((A, Xb, Xd))
 
@@ -96,10 +79,9 @@ def simulate_lineage_size(Xbar, B, growth_rate, num_samples):
 
 if __name__ == '__main__':
 
-    import matplotlib.pyplot as plt
     from plots import plot_simulation_comparison
 
-    test_age = True
+    test_age = False
     test_size = True
 
     
@@ -121,7 +103,7 @@ if __name__ == '__main__':
     if test_age:
         growth_rate = 0.5499
         grid = np.linspace(0, a_max, 2000)
-        synthetic_data = simulate_lineage_age(1, B_power, growth_rate, N)
+        synthetic_data = simulate_lineage_age(1, a_max, B_power, growth_rate, N)
         np.savetxt("data/synthetic_lin_age_model.txt", synthetic_data, delimiter=",")
         synthetic_A = synthetic_data[:,0]
         synthetic_Xb = synthetic_data[:,1]
@@ -140,8 +122,9 @@ if __name__ == '__main__':
 
     if test_size:
         growth_rate = 0.6
-    
-        synthetic_size_data = simulate_lineage_size(1, B_power, growth_rate, N)
+        x_max = np.max(real_Xd)
+        
+        synthetic_size_data = simulate_lineage_size(Xbar, B_power, growth_rate, N, x_max, burn_in=200)
         np.savetxt("data/synthetic_lin_size_model.txt", synthetic_size_data, delimiter=",")
         
         synthetic_A = synthetic_size_data[:,0]
