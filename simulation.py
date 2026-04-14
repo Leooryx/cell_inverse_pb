@@ -13,42 +13,38 @@ np.random.seed(42)
 
 
 
-def f_density(a, B):
-    steps = np.arange(0, a, 0.01)
-    integral = np.sum(B(steps)) * steps
-    return B(a) * np.exp(-integral)
-
-
 def _to_array(B, grid):
     """converts the function B into a numpy array because faster and simulation needs to be fast """
     return np.asarray(B(grid))
 
 
-def sample_division_age(B, B_max):
-    """Simulate one division using thinning method"""
-    
-    a=0.0 #we always start at age zero
-    
-    while True:
-        a += np.random.exponential(1/B_max) #accumulation of arrival/jumping times
-        if np.random.rand() <= B(a)/B_max: #probability of acceptation
-            return a
+def sample_division_age(B, growth_rate):    
+    u = np.random.uniform(0,1)
+    target = -np.log(u)
 
+    def residual(a):
+        integral, _ = quad(B,0,a)
+        return integral - target
+    
+    a_upper = 40
+    for _ in range(10):
+        if residual(a_upper) > 0:
+            break
+        a_upper *= 2
+    
+    a_div = brentq(residual, 0, a_upper, xtol=1e-8)
+    return a_div
+    
 
-# a_max and Xbar will come from real data
-def simulate_lineage_age(B, grid, num_samples, growth_rate, Xbar):
+def simulate_lineage_age(Xbar, B, growth_rate, num_samples):
     """Simulate many samples"""
     
-    B_arr = _to_array(B, grid)
-    B_max = np.max(B_arr)*1.1 #safety margin
     
-    A = []
-    Xb = []
-    Xd = []
+    A, Xb, Xd = [], [], []
     X_current = Xbar #initialisation, but maybe it influences data too much?? --> burn in??
 
     for _ in range(num_samples): #tqdm(range(num_samples)):
-        A_div = sample_division_age(B, B_max)
+        A_div = sample_division_age(B, growth_rate)
         X_div = X_current * np.exp(growth_rate*A_div)
         A.append(np.round(A_div,3))
         Xb.append(np.round(X_current, 3))
@@ -62,7 +58,6 @@ def simulate_lineage_age(B, grid, num_samples, growth_rate, Xbar):
 def sample_division_size(x_birth, B, growth_rate):
     
     u = np.random.uniform(0, 1)
-    
     target = -np.log(u)  
 
     def residual(x):
@@ -104,8 +99,8 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from plots import plot_simulation_comparison
 
-    test_age = False
-    test_size = True
+    test_age = True
+    test_size = False
 
     
     N=2000
@@ -124,10 +119,9 @@ if __name__ == '__main__':
             return a**power
 
     if test_age:
-        growth_rate = 0.545
+        growth_rate = 0.5499
         grid = np.linspace(0, a_max, 2000)
-        
-        synthetic_data = simulate_lineage_age(B_power, grid, N, growth_rate, Xbar)
+        synthetic_data = simulate_lineage_age(1, B_power, growth_rate, N)
         np.savetxt("data/synthetic_lin_age_model.txt", synthetic_data, delimiter=",")
         synthetic_A = synthetic_data[:,0]
         synthetic_Xb = synthetic_data[:,1]
