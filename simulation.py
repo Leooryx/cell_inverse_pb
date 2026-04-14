@@ -1,5 +1,9 @@
 import numpy as np
 import pandas as pd
+from scipy.integrate import quad
+from scipy.optimize import brentq
+import pandas as pd
+
 
 np.random.seed(42)
 
@@ -55,35 +59,41 @@ def simulate_lineage_age(B, grid, num_samples, growth_rate, Xbar):
 
 
 
-def sample_division_size(X_current, B, B_max, g):
-    x = X_current 
-    t = 0
-    while True:
-        t += np.random.exponential(1/B_max) #modified
-        x = X_current * np.exp(g * t)
-        if np.random.rand() < (B(x)* g * x)/B_max:
-            #print((B(x)* g * x)/B_max)
-            
-            return x
-
-from tqdm import tqdm
-def simulate_lineage_size(B, grid, num_samples, growth_rate, Xbar):
-    B_arr = _to_array(B,grid)
-    B_max=np.max(B_arr *grid * growth_rate)*1.1 
+def sample_division_size(x_birth, B, growth_rate):
     
-    A = []
-    Xb = []
-    Xd = []
-    X_current = Xbar #initialisation
+    u = np.random.uniform(0, 1)
+    
+    target = -np.log(u)  
 
-    for _ in tqdm(range(num_samples)):
-        X_div = sample_division_size(X_current, B, B_max, growth_rate)
-        A_div = (1/growth_rate)*np.log(X_div / X_current)
+    def residual(x):
+        integral, _ = quad(B, x_birth, x) # computes integral on [x_birth, x]
+        return integral - target
+
+    #produces upper bound on x, keeps multiply by 2 until cumB is greater than 0 
+    x_upper = x_birth * 2
+    for _ in range(10):
+        if residual(x_upper) > 0:
+            break
+        x_upper *= 2 
+
+    x_div = brentq(residual, x_birth, x_upper, xtol=1e-8) #numerical solver to find zero on [x_birth, x]
+    return x_div
+
+
+def simulate_lineage_size(Xbar, B, growth_rate, num_samples):
+    A, Xb, Xd = [], [], []
+    X_current = Xbar
+
+    for _ in range(num_samples):
+        X_div = sample_division_size(X_current, B, growth_rate)
+        A_div = (1 / growth_rate) * np.log(X_div / X_current)
+
         A.append(np.round(A_div, 3))
         Xb.append(np.round(X_current, 3))
         Xd.append(np.round(X_div, 3))
-        X_current = X_div / 2
-    
+
+        X_current = X_div / 2  
+
     return np.column_stack((A, Xb, Xd))
 
 
@@ -136,10 +146,10 @@ if __name__ == '__main__':
 
     if test_size:
         growth_rate = 0.6
-        s_max = np.max(real_Xd)
-        grid = np.linspace(0, s_max, 2000)
-        synthetic_size_data = simulate_lineage_size(B_power, grid, N, growth_rate, Xbar)
+    
+        synthetic_size_data = simulate_lineage_size(1, B_power, growth_rate, N)
         np.savetxt("data/synthetic_lin_size_model.txt", synthetic_size_data, delimiter=",")
+        
         synthetic_A = synthetic_size_data[:,0]
         synthetic_Xb = synthetic_size_data[:,1]
         synthetic_Xd = synthetic_size_data[:,2]
