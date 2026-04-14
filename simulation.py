@@ -100,7 +100,7 @@ if __name__ == '__main__':
     from plots import plot_simulation_comparison
 
     test_age = True
-    test_size = False
+    test_size = True
 
     
     N=2000

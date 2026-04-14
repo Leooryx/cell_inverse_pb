@@ -83,7 +83,7 @@ def verify_estimator(estimator, truth, data_from_truth, age_or_size):
     best_alpha, min_m, history = find_best_alpha(estimator, data_from_truth, truth,  alphas)
     print(f"Best Alpha found: {best_alpha:.4f}")
     print(f"Minimum MSE: {min_m:.3f}")
-    estimation = B_lineage_age(data_from_truth, best_alpha)
+    estimation = estimator(data_from_truth, best_alpha)
     truth_profile = B_power(points)
 
     output_path="synthetic_vs_estimated.png"
