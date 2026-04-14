@@ -43,13 +43,13 @@ def B_lineage_size(observations, alpha):
 
     for x in x_grid:
         z1 = (x - obs)/alpha
-        z2 = (x - 2*obs)/alpha
-        numer = np.sum(gaussian_kernel(x-obs, alpha))
+        z2 = (x/2 - obs)/alpha
+        numer = np.sum(gaussian_kernel(x/2-obs, alpha))
         denom = np.sum(norm.cdf(z1) - norm.cdf(z2))
         numer_list.append(numer)
         denom_list.append(denom)
 
-    B_hat = np.array(numer_list) / np.array(denom_list)
+    B_hat = 0.5*np.array(numer_list) / np.array(denom_list)
 
     return B_hat
 
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     if test_size:
         PATH_SYNTH_SIZE_LIN = "data/synthetic_lin_size_model.txt"
         synth_lin_size = pd.read_csv(PATH_SYNTH_SIZE_LIN, header=None, names=["ad", "sb", "sd"])
-        synth_real_sizes = synth_lin_size["sd"]
+        synth_real_sizes = synth_lin_size["sb"]
         
         verify_estimator(B_lineage_size, B_power, synth_real_sizes, "size")
 
