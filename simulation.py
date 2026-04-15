@@ -5,6 +5,7 @@ from scipy.integrate import cumulative_trapezoid
 import pandas as pd
 from tqdm import tqdm
 
+# attention, functions in age and size do not have the same order of parameters
 
 np.random.seed(42)
 
@@ -26,8 +27,8 @@ def sample_age_division(B_func, a_max, num_samples):
     
     return sampler
 
-def simulate_lineage_age(Xbar, a_max, B_func, growth_rate, num_samples, burn_in=200):
-    sampler = sample_age_division(B_func, a_max, num_samples)
+def simulate_lineage_age(Xbar, v_max, B_func, growth_rate, num_samples, burn_in=200):
+    sampler = sample_age_division(B_func, v_max, num_samples)
     all_ages = sampler(num_samples + burn_in)
     X_current = Xbar
     A, Xb, Xd = [], [], []
@@ -44,19 +45,22 @@ def simulate_lineage_age(Xbar, a_max, B_func, growth_rate, num_samples, burn_in=
 
 def sample_size_division(B_func, x_max, num_samples):
 
+    grid = np.linspace(0, x_max, num_samples)
+    B_vals = B_func(grid)
+    H_vals = cumulative_trapezoid(B_vals, grid, initial=0)
+    H_interp = interp1d(grid, H_vals, kind='linear',bounds_error=False,fill_value=(grid[0], grid[-1]))
+    H_inv = interp1d(H_vals, grid, kind='linear',bounds_error=False,fill_value=(H_vals[0], H_vals[-1]))
+    
     def sampler(x_birth):
         U = np.random.uniform(0, 1)
-        local_grid = np.linspace(x_birth, x_max, num_samples)
-        B_local = B_func(local_grid)
-        H_local = cumulative_trapezoid(B_local, local_grid, initial=0)
-        H_local_inv = interp1d(H_local, local_grid, kind='linear',bounds_error=False,fill_value=(local_grid[0], local_grid[-1]))
-        return float(H_local_inv(-np.log(U)))
+        target = H_interp(x_birth) - np.log(U)
+        return float(H_inv(target))
 
     return sampler
 
-def simulate_lineage_size(Xbar, B_func, growth_rate, num_samples, x_max, burn_in=200):
+def simulate_lineage_size(Xbar, B_func, growth_rate, num_samples, v_max, burn_in=200):
 
-    sampler = sample_size_division(B_func, x_max, num_samples)
+    sampler = sample_size_division(B_func, v_max, num_samples)
 
     X_current = Xbar
     A, Xb, Xd = [], [], []
