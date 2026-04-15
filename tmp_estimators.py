@@ -10,7 +10,7 @@ from estimators import B_lineage_age, B_lineage_size
 
 # we want to optimize the kernel regression with cdf to minimize wasserstein distance.abs
 
-def grid_search_alpha(observations, estimator, alpha_grid, simulator, growth_rate, v_max, Xbar, age_or_size):
+def grid_search_alpha(observations, estimator, alpha_grid, simulator, growth_rate, v_max, Xbar, age_or_size, burn_in):
     obs = np.asarray(observations)
     results=[]
     best_alpha=None
@@ -19,7 +19,7 @@ def grid_search_alpha(observations, estimator, alpha_grid, simulator, growth_rat
         np.random.seed(42) #same randomness for all samples
         B_hat = estimator(obs, alpha)[1] #[1] for function instead of np.array
         index = 0 if age_or_size=="age" else 2
-        simulated_data = simulator(Xbar=Xbar, v_max=v_max, B_func=B_hat, growth_rate=growth_rate, num_samples=len(obs), burn_in=1000)[1000:,index]
+        simulated_data = simulator(Xbar=Xbar, v_max=v_max, B_func=B_hat, growth_rate=growth_rate, num_samples=len(obs), burn_in=burn_in)[:,index]
         dist = wasserstein_distance(obs, simulated_data) 
         results.append(dist)
 
@@ -35,7 +35,7 @@ def grid_search_alpha(observations, estimator, alpha_grid, simulator, growth_rat
 
 if __name__ == "__main__":
 
-    test_age = False
+    test_age = True
     test_size = True
 
     PATH_LIN = "data/lin_Lydia2901_new_MDJ_ad_sb_sd.txt"
@@ -48,19 +48,19 @@ if __name__ == "__main__":
     x_max = np.max(real_Xd) 
 
     growth_rate = 0.032 #according to regression
-    alpha_grid = np.linspace(0.01, 2, 101)
+    alpha_grid = np.linspace(0.01, 20, 101)
 
-    burn_in = 200
+    burn_in = 1000
 
 
     if test_age:
         #  (we can add the other plots to compare all the distributions!!)
-        best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_A, B_lineage_age, alpha_grid, simulate_lineage_age, growth_rate, a_max, Xbar, "age")
+        best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_A, B_lineage_age, alpha_grid, simulate_lineage_age, growth_rate, a_max, Xbar, "age", burn_in)
         output_path = "7_kernel_lineage_age.png"
         plot_main_results(alpha_grid, dist_hist, best_alpha, real_A, Best_B_hat, output_path, "age")
         
         np.random.seed(42)
-        synthetic_data = simulate_lineage_age(Xbar, a_max, Best_B_hat, growth_rate, 2000, burn_in=burn_in)[burn_in:,:]
+        synthetic_data = simulate_lineage_age(Xbar, a_max, Best_B_hat, growth_rate, 2000, burn_in=burn_in)      
         synthetic_A = synthetic_data[:,0]
         synthetic_Xb = synthetic_data[:,1]
         synthetic_Xd = synthetic_data[:,2]
@@ -81,12 +81,12 @@ if __name__ == "__main__":
     
 
     if test_size:
-        best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_Xb, B_lineage_size, alpha_grid, simulate_lineage_size, growth_rate, x_max, Xbar, "size")
+        best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_Xb, B_lineage_size, alpha_grid, simulate_lineage_size, growth_rate, x_max, Xbar, "size", burn_in)
         output_path = "7_kernel_lineage_size.png"
         plot_main_results(alpha_grid, dist_hist, best_alpha, real_Xb, Best_B_hat, output_path, "size")
         
         np.random.seed(42)
-        synthetic_size_data = simulate_lineage_size(Xbar, Best_B_hat, growth_rate, 2000, x_max, burn_in=burn_in)[burn_in:,:]
+        synthetic_size_data = simulate_lineage_size(Xbar, Best_B_hat, growth_rate, 2000, x_max, burn_in=burn_in)
         synthetic_A = synthetic_size_data[:,0]
         synthetic_Xb = synthetic_size_data[:,1]
         synthetic_Xd = synthetic_size_data[:,2]
