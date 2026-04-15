@@ -57,6 +57,8 @@ def B_lineage_size(observations, alpha):
 
 
 
+
+
 def find_best_alpha(estimator, observations, B, alphas):
     obs = np.asarray(observations)
     a_grid = np.linspace(min(obs), max(obs), len(obs))

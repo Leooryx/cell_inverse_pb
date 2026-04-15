@@ -26,11 +26,13 @@ def grid_search_alpha(observations, estimator, alpha_grid, simulator, growth_rat
         if dist < min_dist:
             min_dist = dist
             best_alpha = alpha
-            Best_B_hat = B_hat
+            best_B_hat = B_hat
     print("minimum distance:", min_dist)
     print("best alpha:", best_alpha)
     
-    return best_alpha, np.asarray(results), Best_B_hat
+    return best_alpha, np.asarray(results), best_B_hat
+
+
 
 
 if __name__ == "__main__":
@@ -55,12 +57,12 @@ if __name__ == "__main__":
 
     if test_age:
         #  (we can add the other plots to compare all the distributions!!)
-        best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_A, B_lineage_age, alpha_grid, simulate_lineage_age, growth_rate, a_max, Xbar, "age", burn_in)
+        best_alpha, dist_hist, best_B_hat = grid_search_alpha(real_A, B_lineage_age, alpha_grid, simulate_lineage_age, growth_rate, a_max, Xbar, "age", burn_in)
         output_path = "7_kernel_lineage_age.png"
-        plot_main_results(alpha_grid, dist_hist, best_alpha, real_A, Best_B_hat, output_path, "age")
+        plot_main_results(alpha_grid, dist_hist, best_alpha, real_A, best_B_hat, output_path, "age")
         
         np.random.seed(42)
-        synthetic_data = simulate_lineage_age(Xbar, a_max, Best_B_hat, growth_rate, 2000, burn_in=burn_in)      
+        synthetic_data = simulate_lineage_age(Xbar, a_max, best_B_hat, growth_rate, 2000, burn_in=burn_in)      
         synthetic_A = synthetic_data[:,0]
         synthetic_Xb = synthetic_data[:,1]
         synthetic_Xd = synthetic_data[:,2]
@@ -81,12 +83,12 @@ if __name__ == "__main__":
     
 
     if test_size:
-        best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_Xb, B_lineage_size, alpha_grid, simulate_lineage_size, growth_rate, x_max, Xbar, "size", burn_in)
+        best_alpha, dist_hist, best_B_hat = grid_search_alpha(real_Xb, B_lineage_size, alpha_grid, simulate_lineage_size, growth_rate, x_max, Xbar, "size", burn_in)
         output_path = "7_kernel_lineage_size.png"
-        plot_main_results(alpha_grid, dist_hist, best_alpha, real_Xb, Best_B_hat, output_path, "size")
+        plot_main_results(alpha_grid, dist_hist, best_alpha, real_Xb, best_B_hat, output_path, "size")
         
         np.random.seed(42)
-        synthetic_size_data = simulate_lineage_size(Xbar, Best_B_hat, growth_rate, 2000, x_max, burn_in=burn_in)
+        synthetic_size_data = simulate_lineage_size(Xbar, best_B_hat, growth_rate, 2000, x_max, burn_in=burn_in)
         synthetic_A = synthetic_size_data[:,0]
         synthetic_Xb = synthetic_size_data[:,1]
         synthetic_Xd = synthetic_size_data[:,2]
@@ -104,3 +106,7 @@ if __name__ == "__main__":
                 
         output_path = '7_synthetic_lin_size_model.png'
         plot_simulation_comparison(real_A, real_Xb, real_Xd, synthetic_A, synthetic_Xb, synthetic_Xd, output_path)
+
+
+
+    
