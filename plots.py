@@ -93,7 +93,7 @@ def plot_main_results(alpha_grid, dist_hist, best_alpha, real_data, Best_B_hat, 
     axes[1].plot(points, Best_B_hat(points), color="blue", lw=2, ls="--",
                  label=f"Estimated B  alpha={best_alpha:.2f}  W={min_dist:.3f}")
     axes[1].set_title("Best Division Rate Estimate")
-    axes[1].set_xlabel(f"{age_or_size} at division")
+    axes[1].set_xlabel(f"{age_or_size}")
     axes[1].set_ylabel("Division rate B")
     axes[1].grid(alpha=0.3)
     axes[1].legend()
