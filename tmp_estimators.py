@@ -3,7 +3,7 @@ from scipy.stats import wasserstein_distance
 from tqdm import tqdm
 import pandas as pd
 
-from plots import plot_main_results
+from plots import plot_main_results, plot_simulation_comparison
 from simulation import simulate_lineage_age, simulate_lineage_size
 from estimators import B_lineage_age, B_lineage_size
 
@@ -62,9 +62,35 @@ if __name__ == "__main__":
         output_path = "7_kernel_lineage_age.png"
         Best_B_hat = lambda a: Best_B_hat_normalized(a / scale_age) / scale_age #un-normalized division rate
         plot_main_results(alpha_grid, dist_hist, best_alpha, real_A, Best_B_hat, output_path, "age")
+
+        synthetic_data = simulate_lineage_age(Xbar*scale_age, a_max*scale_age, Best_B_hat, growth_rate, 2000)
+        synthetic_A = synthetic_data[:,0]
+        synthetic_Xb = synthetic_data[:,1]
+        synthetic_Xd = synthetic_data[:,2]
+        synthetic_A_max = np.round(np.max(synthetic_A),3)
+        synthetic_Xbar = np.round(np.mean(synthetic_Xb), 3)
+        print("real a_max:", a_max*scale_age, "/ real X_bar:", Xbar*scale_age)
+        print("fake a_max:", synthetic_A_max, "/ fake Xbar:", synthetic_Xbar)
+
+
+        output_path = "7_synthetic_lin_age_model.png"
+
+        plot_simulation_comparison(real_A, real_Xb, real_Xd, synthetic_A, synthetic_Xb, synthetic_Xd, output_path)
     
     if test_size:
         best_alpha, dist_hist, Best_B_hat_normalized = grid_search_alpha(real_Xb_normalized, B_lineage_size, alpha_grid, simulate_lineage_size, growth_rate, x_max, Xbar)
         output_path = "7_kernel_lineage_size.png"
         Best_B_hat = lambda x: Best_B_hat_normalized(x / scale_size) / scale_size #un-normalized division rate
         plot_main_results(alpha_grid, dist_hist, best_alpha, real_Xb, Best_B_hat, output_path, "size")
+        
+        synthetic_size_data = simulate_lineage_size(Xbar*scale_size, Best_B_hat, growth_rate, 2000, x_max*scale_size, burn_in=200)
+        synthetic_A = synthetic_size_data[:,0]
+        synthetic_Xb = synthetic_size_data[:,1]
+        synthetic_Xd = synthetic_size_data[:,2]
+        synthetic_A_max = np.round(np.max(synthetic_A),3)
+        synthetic_Xbar = np.round(np.mean(synthetic_Xb), 3)
+        print("real a_max:", a_max*scale_age, "/ real X_bar:", Xbar*scale_size)
+        print("fake a_max:", synthetic_A_max, "/ fake Xbar:", synthetic_Xbar)
+        
+        output_path = 'synthetic_lin_size_model.png'
+        plot_simulation_comparison(real_A, real_Xb, real_Xd, synthetic_A, synthetic_Xb, synthetic_Xd, output_path)
