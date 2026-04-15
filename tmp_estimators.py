@@ -19,7 +19,7 @@ def grid_search_alpha(observations, estimator, alpha_grid, simulator, growth_rat
         np.random.seed(42) #same randomness for all samples
         B_hat = estimator(obs, alpha)[1] #[1] for function instead of np.array
         index = 0 if age_or_size=="age" else 2
-        simulated_data = simulator(Xbar=Xbar, v_max=v_max, B_func=B_hat, growth_rate=growth_rate, num_samples=len(obs), burn_in=0)[:,index]
+        simulated_data = simulator(Xbar=Xbar, v_max=v_max, B_func=B_hat, growth_rate=growth_rate, num_samples=len(obs), burn_in=1000)[1000:,index]
         dist = wasserstein_distance(obs, simulated_data) 
         results.append(dist)
 
@@ -35,7 +35,7 @@ def grid_search_alpha(observations, estimator, alpha_grid, simulator, growth_rat
 
 if __name__ == "__main__":
 
-    test_age = True
+    test_age = False
     test_size = True
 
     PATH_LIN = "data/lin_Lydia2901_new_MDJ_ad_sb_sd.txt"
@@ -50,6 +50,7 @@ if __name__ == "__main__":
     growth_rate = 0.032 #according to regression
     alpha_grid = np.linspace(0.01, 2, 101)
 
+    burn_in = 200
 
 
     if test_age:
@@ -59,7 +60,7 @@ if __name__ == "__main__":
         plot_main_results(alpha_grid, dist_hist, best_alpha, real_A, Best_B_hat, output_path, "age")
         
         np.random.seed(42)
-        synthetic_data = simulate_lineage_age(Xbar, a_max, Best_B_hat, growth_rate, 2000)
+        synthetic_data = simulate_lineage_age(Xbar, a_max, Best_B_hat, growth_rate, 2000, burn_in=burn_in)[burn_in:,:]
         synthetic_A = synthetic_data[:,0]
         synthetic_Xb = synthetic_data[:,1]
         synthetic_Xd = synthetic_data[:,2]
@@ -80,12 +81,12 @@ if __name__ == "__main__":
     
 
     if test_size:
-        best_alpha, dist_hist, Best_B_hat_normalized = grid_search_alpha(real_Xb, B_lineage_size, alpha_grid, simulate_lineage_size, growth_rate, x_max, Xbar, "size")
+        best_alpha, dist_hist, Best_B_hat = grid_search_alpha(real_Xb, B_lineage_size, alpha_grid, simulate_lineage_size, growth_rate, x_max, Xbar, "size")
         output_path = "7_kernel_lineage_size.png"
         plot_main_results(alpha_grid, dist_hist, best_alpha, real_Xb, Best_B_hat, output_path, "size")
         
         np.random.seed(42)
-        synthetic_size_data = simulate_lineage_size(Xbar, Best_B_hat, growth_rate, 2000, x_max, burn_in=200)
+        synthetic_size_data = simulate_lineage_size(Xbar, Best_B_hat, growth_rate, 2000, x_max, burn_in=burn_in)[burn_in:,:]
         synthetic_A = synthetic_size_data[:,0]
         synthetic_Xb = synthetic_size_data[:,1]
         synthetic_Xd = synthetic_size_data[:,2]
