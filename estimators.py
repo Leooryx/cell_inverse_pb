@@ -26,7 +26,6 @@ def B_lineage_age(observations, alpha):
     for a in a_grid:
         z = (a - observations) / alpha 
         numer = np.sum(gaussian_kernel(a - obs, alpha))
-        #denom = max( np.sum(obs >= a), omega_n)
         denom = np.sum(1-norm.cdf(z)) #with cdf so its never equal to zero
         numer_list.append(numer)
         denom_list.append(denom)
